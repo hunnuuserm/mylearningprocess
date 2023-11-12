@@ -32,6 +32,11 @@ class RBTree
 {
 	typedef RBTreeNode<K, V> Node;
 public:
+	~RBTree()
+	{
+		_destroy(_root);
+		_root = nullptr;
+	}
 	bool insert(const pair<K, V>& kv)
 	{
 		if (_root == nullptr)
@@ -167,6 +172,16 @@ public:
 		return _isBalance(_root, blackCount, 0);
 	}
 private:
+	void _destroy(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return;
+		}
+		_destroy(root->_left);
+		_destroy(root->_right);
+		delete root;
+	}
 	void _inOrder(Node* root)
 	{
 		if (root == nullptr)
