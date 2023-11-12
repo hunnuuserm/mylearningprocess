@@ -93,7 +93,7 @@ namespace m
 				{
 					assert(false);
 				}
-				//�ж��Ƿ����үү�ڵ�,�Լ��ж��Ƿ���ת����ת����
+				//判断是否更新爷爷节点,以及判断是否旋转、旋转方向
 				while (parent)
 				{
 					if (cur == parent->_right)
@@ -114,17 +114,17 @@ namespace m
 						cur = parent;
 						parent = parent->_parent;
 					}
-					else if (parent->_bf == -2 && parent->_left->_bf == -1)//�ҵ���
+					else if (parent->_bf == -2 && parent->_left->_bf == -1)//右单旋
 					{
 						rotateR(parent);
 						break;
 					}
-					else if (parent->_bf == 2 && parent->_right->_bf == 1)//����
+					else if (parent->_bf == 2 && parent->_right->_bf == 1)//左单旋
 					{
 						rotateL(parent);
 						break;
 					}
-					else if (parent->_bf == -2 && parent->_left->_bf == 1)//����˫��
+					else if (parent->_bf == -2 && parent->_left->_bf == 1)//左右双旋
 					{
 						Node* subL = parent->_left;
 						Node* subLR = subL->_right;
@@ -155,7 +155,7 @@ namespace m
 						}
 						break;
 					}
-					else if (parent->_bf == 2 && parent->_right->_bf == -1)//����˫��
+					else if (parent->_bf == 2 && parent->_right->_bf == -1)//右左双旋
 					{
 						Node* subR = parent->_right;
 						Node* subRL = subR->_left;
@@ -244,8 +244,8 @@ namespace m
 
 			return highDiff < 2 && _isBalanceTree(root->_left) && _isBalanceTree(root->_right);
 		}
-		//��ת����
-		//�ҵ���
+		//旋转函数
+		//右单旋
 		void rotateR(Node* parent)
 		{
 			Node* subL = parent->_left;
@@ -282,7 +282,7 @@ namespace m
 			}
 			subL->_bf = parent->_bf = 0;
 		}
-		//����
+		//左单旋
 		void rotateL(Node* parent)
 		{
 			Node* subR = parent->_right;
