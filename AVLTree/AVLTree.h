@@ -31,6 +31,11 @@ namespace m
 	{
 		typedef AVLTreeNode<K, V> Node;
 	public:
+		~AVLTree()
+		{
+			_destroy(_root);
+			_root = nullptr;
+		}
 		void inOrder()
 		{
 			_inOrder(_root);
@@ -88,7 +93,7 @@ namespace m
 				{
 					assert(false);
 				}
-				//ÅÐ¶ÏÊÇ·ñ¸üÐÂÒ¯Ò¯½Úµã,ÒÔ¼°ÅÐ¶ÏÊÇ·ñÐý×ª¡¢Ðý×ª·½Ïò
+				//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ò¯Ò¯ï¿½Úµï¿½,ï¿½Ô¼ï¿½ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
 				while (parent)
 				{
 					if (cur == parent->_right)
@@ -109,17 +114,17 @@ namespace m
 						cur = parent;
 						parent = parent->_parent;
 					}
-					else if (parent->_bf == -2 && parent->_left->_bf == -1)//ÓÒµ¥Ðý
+					else if (parent->_bf == -2 && parent->_left->_bf == -1)//ï¿½Òµï¿½ï¿½ï¿½
 					{
 						rotateR(parent);
 						break;
 					}
-					else if (parent->_bf == 2 && parent->_right->_bf == 1)//×óµ¥Ðý
+					else if (parent->_bf == 2 && parent->_right->_bf == 1)//ï¿½ï¿½ï¿½ï¿½
 					{
 						rotateL(parent);
 						break;
 					}
-					else if (parent->_bf == -2 && parent->_left->_bf == 1)//×óÓÒË«Ðý
+					else if (parent->_bf == -2 && parent->_left->_bf == 1)//ï¿½ï¿½ï¿½ï¿½Ë«ï¿½ï¿½
 					{
 						Node* subL = parent->_left;
 						Node* subLR = subL->_right;
@@ -150,7 +155,7 @@ namespace m
 						}
 						break;
 					}
-					else if (parent->_bf == 2 && parent->_right->_bf == -1)//ÓÒ×óË«Ðý
+					else if (parent->_bf == 2 && parent->_right->_bf == -1)//ï¿½ï¿½ï¿½ï¿½Ë«ï¿½ï¿½
 					{
 						Node* subR = parent->_right;
 						Node* subRL = subR->_left;
@@ -191,6 +196,16 @@ namespace m
 		}
 
 	private:
+		void _destroy(Node* root)
+		{
+			if (root == nullptr)
+			{
+				return;
+			}
+			_destroy(root->_left);
+			_destroy(root->_right);
+			delete root;
+		}
 		void _inOrder(Node* root)
 		{
 			if (root == nullptr)
@@ -229,8 +244,8 @@ namespace m
 
 			return highDiff < 2 && _isBalanceTree(root->_left) && _isBalanceTree(root->_right);
 		}
-		//Ðý×ªº¯Êý
-		//ÓÒµ¥Ðý
+		//ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
+		//ï¿½Òµï¿½ï¿½ï¿½
 		void rotateR(Node* parent)
 		{
 			Node* subL = parent->_left;
@@ -267,7 +282,7 @@ namespace m
 			}
 			subL->_bf = parent->_bf = 0;
 		}
-		//×óµ¥Ðý
+		//ï¿½ï¿½ï¿½ï¿½
 		void rotateL(Node* parent)
 		{
 			Node* subR = parent->_right;
