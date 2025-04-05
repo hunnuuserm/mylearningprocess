@@ -291,7 +291,9 @@ void QuickSort3(int* a, int begin, int end)
 	}
 	int prev = begin;
 	int cur = begin + 1;
-	int keyi = midKey(a, begin, end);
+	int keyi = begin;
+	int mid = midKey(a, begin, end);
+	Swap(&a[keyi], &a[mid]);
 	while (cur <= end)
 	{
 		if (a[cur] < a[keyi]&&++prev!=cur)
@@ -411,12 +413,12 @@ void _mergeSort(int* a, int begin, int end, int* tmp)
 	{
 		return;
 	}
-	//·ÖÖÎ
+	//ï¿½ï¿½ï¿½ï¿½
 	int mid = (begin + end) / 2;
 	_mergeSort(a, begin, mid, tmp);
 	_mergeSort(a, mid + 1, end, tmp);
 
-	//¹é²¢
+	//ï¿½é²¢
 	int begin1 = begin;
 	int end1 = mid;
 	int begin2 = mid + 1;
