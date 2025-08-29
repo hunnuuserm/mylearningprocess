@@ -1,110 +1,143 @@
-#include <unordered_map>
-#include <list>
-#include <ctime>
+//注意点：
+//1.第一次写的时候，把第27行忘了，注意Get的时候，在把节点移到_list最前面时，也要把之前的节点在_list中删掉；
+//2.第131,133行，windows上的Sleep函数参数是毫秒。
+
 #include <iostream>
-#include <optional>
+#include <list>
+#include <unordered_map>
+#include <ctime>
+#include <windows.h>
 
-template<typename K, typename V>
-class ExpiringLRUCache {
+template<class K, class V>
+class ExpiringLRUCache
+{
 public:
-    ExpiringLRUCache(size_t capacity, time_t ttl) : capacity_(capacity), ttl_(ttl) {}
+	ExpiringLRUCache(int capacity = 3, time_t ttl = 5)
+		:_capacity(capacity),
+		_ttl(ttl)
+	{}
+    //这里可以使用std::optional<V>，但VS2022暂时不支持C++17，所以用-1代替找不到的情况
+	V Get(const K& key)
+	{
+		time_t now = std::time(nullptr);
+		auto it = _table.find(key);
+		if (it == _table.end())
+			return -1;
 
-    void put(const K& key, const V& value) {
-        auto now = std::time(nullptr);
+		if (it->second->second._endTime < now)
+		{
+			remove(key);
+			return -1;
+		}
 
-        // 如果键已经存在，更新值和时间戳并将其移动到头部
-        if (map_.find(key) != map_.end()) {
-            lruList_.erase(map_[key].lruIt); // 修正：使用 lruIt
-        } else if (map_.size() >= capacity_) {
-            // 缓存已满，检查是否有过期的KV
-            removeExpiredKV();
-            // 如果依然满了，按照LRU策略删除最久未使用的KV
-            if (map_.size() >= capacity_) {
-                auto last = lruList_.back();
-                map_.erase(last);
-                lruList_.pop_back();
-            }
-        }
+		Node node = it->second->second;
+		_list.erase(it->second);
+		_list.push_front({key,node});
+		_table[key] = _list.begin();
+		return node._val;
+	}
+	void Put(const K& key, const V& value)
+	{	
+		time_t now = std::time(nullptr);
+		if (_table.find(key) != _table.end())
+		{
+			remove(key);
+		}
+		else if (_table.size() == _capacity)
+		{
+			removeExpiring();
+			if (_table.size() == _capacity)
+			{
+				remove(_list.back().first);
+			}
+		}
 
-        lruList_.push_front(key);
-        map_[key] = {value, lruList_.begin(), now + ttl_};
-    }
-
-    std::optional<V> get(const K& key) {
-        auto now = std::time(nullptr);
-
-        // 查找键是否存在
-        auto it = map_.find(key);
-        if (it == map_.end()) return std::nullopt;
-
-        // 检查键是否过期
-        if (now > it->second.expiry) {
-            remove(key);
-            return std::nullopt;
-        }
-
-        // 更新LRU
-        lruList_.erase(it->second.lruIt); // 修正：使用 lruIt
-        lruList_.push_front(key);
-        it->second.lruIt = lruList_.begin();
-
-        return it->second.value;
-    }
-
-    void remove(const K& key) {
-        auto it = map_.find(key);
-        if (it != map_.end()) {
-            lruList_.erase(it->second.lruIt); // 修正：使用 lruIt
-            map_.erase(it);
-        }
-    }
-
+		_list.push_front({ key,{value, now + _ttl} });
+		_table[key] = _list.begin();
+	}
 private:
-    struct CacheNode {
-        V value;
-        typename std::list<K>::iterator lruIt;
-        time_t expiry;
-    };
-
-    void removeExpiredKV() {
-        auto now = std::time(nullptr);
-        for (auto it = lruList_.rbegin(); it != lruList_.rend(); ++it) {
-            auto mapIt = map_.find(*it);
-            if (mapIt != map_.end() && now > mapIt->second.expiry) {
-                remove(*it);
-                return;
-            }
-        }
-    }
-
-    size_t capacity_;
-    time_t ttl_;
-    std::unordered_map<K, CacheNode> map_;
-    std::list<K> lruList_;
+	void remove(const K& key)
+	{
+		auto it = _table.find(key);
+		_list.erase(it->second);
+		_table.erase(it);
+	}
+	void removeExpiring()
+	{
+		auto now = std::time(nullptr);
+		auto it = _list.rbegin();
+		while (it != _list.rend())
+		{
+			if (it->second._endTime < now)
+			{
+				K key = it->first;
+				/*_list.erase(it);
+				_table.erase(key);*/
+				remove(key);
+				return;
+			}
+			++it;
+		}
+	}
+private:
+	struct Node
+	{
+		Node(V val, time_t endTime)
+			:_val(val),
+			_endTime(endTime)
+		{}
+		V _val;
+		time_t _endTime;
+	};
+private:
+	int _capacity;
+	time_t _ttl;
+	list<pair<K, Node>> _list;
+	unordered_map<K, typename list<pair<K, Node>>::iterator> _table;
 };
 
-int main() {
-    ExpiringLRUCache<int, std::string> cache(3, 5);  // 容量为3, 过期时间为5秒
+int main()
+{
+	ExpiringLRUCache<int, int> elru;
+	elru.Put(1, 1);
+	elru.Put(2, 3);
+	elru.Put(3, 3);
+	elru.Put(4, 4);
+	elru.Put(5, 5);
 
-    cache.put(1, "one");
-    cache.put(2, "two");
-    cache.put(3, "three");
+	if (elru.Get(1) == -1)
+	{
+		cout << "1 expiring" << endl;
+	}
 
-    std::this_thread::sleep_for(std::chrono::seconds(6));  // 等待6秒，确保第一个元素过期
+	if (elru.Get(2) == -1)
+	{
+		cout << "2 expiring" << endl;
+	}
 
-    cache.put(4, "four");  // 插入新元素，检查过期机制
+	if (elru.Get(3) != -1)
+	{
+		cout << "get 3 succeed" << endl;
+	}
+	if (elru.Get(4) != -1)
+	{
+		cout << "get 4 succeed" << endl;
+	}
+	if (elru.Get(5) != -1)
+	{
+		cout << "get 5 succeed" << endl;
+	}
 
-    if (auto result = cache.get(1)) {
-        std::cout << "Key 1: " << *result << std::endl;
-    } else {
-        std::cout << "Key 1 expired or not found" << std::endl;
-    }
-
-    if (auto result = cache.get(2)) {
-        std::cout << "Key 2: " << *result << std::endl;
-    } else {
-        std::cout << "Key 2 expired or not found" << std::endl;
-    }
-
+	Sleep(2000);
+	elru.Put(6,6);
+	Sleep(4000);
+	if (elru.Get(5) == -1)
+	{
+		cout << "5 expiring" << endl;
+	}
+	if (elru.Get(6) != -1)
+	{
+		cout << "get 6 succeed" << endl;
+	}
     return 0;
 }
