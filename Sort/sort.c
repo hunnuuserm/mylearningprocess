@@ -444,6 +444,11 @@ void _mergeSort(int* a, int begin, int end, int* tmp)
 		tmp[i++] = a[begin2++];
 	}
 	memcpy(a + begin, tmp + begin, (end - begin + 1) * sizeof(int));
+	//如果要用C++写，那这里直接一个一个向vector中复制，即：
+	// for(int i = begin; i <= end; ++i)
+	// {
+	// 	a[i] = tmp[i];
+	// }
 }
 
 void mergeSort(int* a, int size)
